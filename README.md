@@ -4,8 +4,6 @@ AI-powered conventional commit message generator CLI.
 
 [![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/aaroncx)
 
-![demo](./demo.gif)
-
 ## Install
 
 ```bash
