@@ -36,6 +36,8 @@ program
   .option('--commit', 'Auto-run git commit with the result')
   .option('--dry-run', 'Show the diff without calling AI')
   .option('--type <type>', 'Constrain commit type (feat, fix, docs, style, refactor, perf, test, chore, ci, build)')
+  .option('--scope <scope>', 'Add a conventional commit scope, e.g. feat(auth): ...')
+  .option('--emoji', 'Prepend a gitmoji to the commit message')
   .action(handleGenerate)
 
 const configCmd = program.command('config').description('Manage configuration')

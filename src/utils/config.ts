@@ -6,6 +6,7 @@ interface CommitCraftConfig {
   openaiApiKey: string
   model: string
   autoCopy: boolean
+  emoji: boolean
 }
 
 const config = new Conf<CommitCraftConfig>({
@@ -16,6 +17,7 @@ const config = new Conf<CommitCraftConfig>({
     openaiApiKey: '',
     model: '',
     autoCopy: false,
+    emoji: false,
   },
 })
 
@@ -26,11 +28,12 @@ export function getConfig(): CommitCraftConfig {
     openaiApiKey: config.get('openaiApiKey'),
     model: config.get('model'),
     autoCopy: config.get('autoCopy'),
+    emoji: config.get('emoji'),
   }
 }
 
 export function setConfig(key: string, value: string) {
-  if (key === 'autoCopy') {
+  if (key === 'autoCopy' || key === 'emoji') {
     config.set(key, value === 'true')
   } else {
     config.set(key as keyof CommitCraftConfig, value)

@@ -7,6 +7,7 @@ import { generateCommitMessage } from '../core/ai.js'
 import { validateCommitMessage } from '../core/formatter.js'
 import { getConfig, getApiKey } from '../utils/config.js'
 import { logger } from '../utils/logger.js'
+import { prependEmoji } from '../utils/emoji.js'
 
 const VALID_TYPES = ['feat', 'fix', 'docs', 'style', 'refactor', 'perf', 'test', 'chore', 'ci', 'build'] as const
 
@@ -17,6 +18,8 @@ interface GenerateOptions {
   commit?: boolean
   dryRun?: boolean
   type?: string
+  scope?: string
+  emoji?: boolean
 }
 
 export async function handleGenerate(options: GenerateOptions) {
@@ -60,6 +63,7 @@ export async function handleGenerate(options: GenerateOptions) {
     const provider = (options.provider as 'anthropic' | 'openai') || cfg.provider
     const model = options.model || cfg.model || undefined
     const type = options.type
+    const scope = options.scope
     const apiKey = getApiKey(provider)
 
     if (!apiKey) {
@@ -72,7 +76,11 @@ export async function handleGenerate(options: GenerateOptions) {
 
     spinner.text = 'Generating commit message...'
 
-    const message = await generateCommitMessage(diff, { provider, model, apiKey, type })
+    let message = await generateCommitMessage(diff, { provider, model, apiKey, type, scope })
+
+    if (options.emoji || cfg.emoji) {
+      message = prependEmoji(message)
+    }
 
     spinner.stop()
 
