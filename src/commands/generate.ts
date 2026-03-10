@@ -8,15 +8,23 @@ import { validateCommitMessage } from '../core/formatter.js'
 import { getConfig, getApiKey } from '../utils/config.js'
 import { logger } from '../utils/logger.js'
 
+const VALID_TYPES = ['feat', 'fix', 'docs', 'style', 'refactor', 'perf', 'test', 'chore', 'ci', 'build'] as const
+
 interface GenerateOptions {
   provider?: string
   model?: string
   copy?: boolean
   commit?: boolean
   dryRun?: boolean
+  type?: string
 }
 
 export async function handleGenerate(options: GenerateOptions) {
+  if (options.type && !VALID_TYPES.includes(options.type as typeof VALID_TYPES[number])) {
+    logger.error(`Invalid commit type "${options.type}". Valid types: ${VALID_TYPES.join(', ')}`)
+    process.exit(1)
+  }
+
   const spinner = ora('Analyzing staged changes...').start()
 
   try {
@@ -51,6 +59,7 @@ export async function handleGenerate(options: GenerateOptions) {
     const cfg = getConfig()
     const provider = (options.provider as 'anthropic' | 'openai') || cfg.provider
     const model = options.model || cfg.model || undefined
+    const type = options.type
     const apiKey = getApiKey(provider)
 
     if (!apiKey) {
@@ -63,7 +72,7 @@ export async function handleGenerate(options: GenerateOptions) {
 
     spinner.text = 'Generating commit message...'
 
-    const message = await generateCommitMessage(diff, { provider, model, apiKey })
+    const message = await generateCommitMessage(diff, { provider, model, apiKey, type })
 
     spinner.stop()
 

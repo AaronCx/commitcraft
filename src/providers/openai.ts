@@ -15,14 +15,20 @@ export async function generateWithOpenAI(
   diff: string,
   apiKey: string,
   model?: string,
+  type?: string,
 ): Promise<string> {
   const client = new OpenAI({ apiKey })
+
+  let systemPrompt = SYSTEM_PROMPT
+  if (type) {
+    systemPrompt += `\n\nIMPORTANT: The commit MUST use the type: ${type}`
+  }
 
   const response = await client.chat.completions.create({
     model: model || 'gpt-4o-mini',
     max_tokens: 256,
     messages: [
-      { role: 'system', content: SYSTEM_PROMPT },
+      { role: 'system', content: systemPrompt },
       { role: 'user', content: `Here is the git diff:\n\n${diff}` },
     ],
   })

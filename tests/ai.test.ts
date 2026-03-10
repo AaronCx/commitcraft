@@ -26,7 +26,7 @@ describe('generateCommitMessage', () => {
     })
 
     expect(result).toBe('feat: add login')
-    expect(generateWithAnthropic).toHaveBeenCalledWith('diff content', 'test-key', undefined)
+    expect(generateWithAnthropic).toHaveBeenCalledWith('diff content', 'test-key', undefined, undefined)
     expect(generateWithOpenAI).not.toHaveBeenCalled()
   })
 
@@ -39,7 +39,7 @@ describe('generateCommitMessage', () => {
     })
 
     expect(result).toBe('fix: correct bug')
-    expect(generateWithOpenAI).toHaveBeenCalledWith('diff content', 'test-key', undefined)
+    expect(generateWithOpenAI).toHaveBeenCalledWith('diff content', 'test-key', undefined, undefined)
     expect(generateWithAnthropic).not.toHaveBeenCalled()
   })
 

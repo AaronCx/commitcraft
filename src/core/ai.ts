@@ -5,14 +5,15 @@ export interface AIOptions {
   provider: 'anthropic' | 'openai'
   model?: string
   apiKey: string
+  type?: string
 }
 
 export async function generateCommitMessage(diff: string, options: AIOptions): Promise<string> {
   try {
     if (options.provider === 'anthropic') {
-      return await generateWithAnthropic(diff, options.apiKey, options.model)
+      return await generateWithAnthropic(diff, options.apiKey, options.model, options.type)
     } else {
-      return await generateWithOpenAI(diff, options.apiKey, options.model)
+      return await generateWithOpenAI(diff, options.apiKey, options.model, options.type)
     }
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err)

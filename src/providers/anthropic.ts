@@ -15,13 +15,19 @@ export async function generateWithAnthropic(
   diff: string,
   apiKey: string,
   model?: string,
+  type?: string,
 ): Promise<string> {
   const client = new Anthropic({ apiKey })
+
+  let systemPrompt = SYSTEM_PROMPT
+  if (type) {
+    systemPrompt += `\n\nIMPORTANT: The commit MUST use the type: ${type}`
+  }
 
   const response = await client.messages.create({
     model: model || 'claude-haiku-4-5-20241022',
     max_tokens: 256,
-    system: SYSTEM_PROMPT,
+    system: systemPrompt,
     messages: [
       {
         role: 'user',

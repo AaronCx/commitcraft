@@ -35,6 +35,7 @@ program
   .option('--copy', 'Copy result to clipboard')
   .option('--commit', 'Auto-run git commit with the result')
   .option('--dry-run', 'Show the diff without calling AI')
+  .option('--type <type>', 'Constrain commit type (feat, fix, docs, style, refactor, perf, test, chore, ci, build)')
   .action(handleGenerate)
 
 const configCmd = program.command('config').description('Manage configuration')
