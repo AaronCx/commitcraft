@@ -41,6 +41,14 @@ program
   .option('--amend', 'Regenerate the last commit message')
   .action(handleGenerate)
 
+program
+  .command('init')
+  .description('Create a .commitcraftrc config file')
+  .action(async () => {
+    const { initConfig } = await import('./commands/init.js')
+    await initConfig()
+  })
+
 const configCmd = program.command('config').description('Manage configuration')
 
 configCmd
