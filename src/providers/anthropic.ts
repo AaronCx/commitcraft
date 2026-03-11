@@ -16,12 +16,16 @@ export async function generateWithAnthropic(
   apiKey: string,
   model?: string,
   type?: string,
+  scope?: string,
 ): Promise<string> {
   const client = new Anthropic({ apiKey })
 
   let systemPrompt = SYSTEM_PROMPT
   if (type) {
     systemPrompt += `\n\nIMPORTANT: The commit MUST use the type: ${type}`
+  }
+  if (scope) {
+    systemPrompt += `\n\nIMPORTANT: The commit MUST include the scope "${scope}", e.g. type(${scope}): description`
   }
 
   const response = await client.messages.create({
