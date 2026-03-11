@@ -38,6 +38,7 @@ program
   .option('--type <type>', 'Constrain commit type (feat, fix, docs, style, refactor, perf, test, chore, ci, build)')
   .option('--scope <scope>', 'Add a conventional commit scope, e.g. feat(auth): ...')
   .option('--emoji', 'Prepend a gitmoji to the commit message')
+  .option('--amend', 'Regenerate the last commit message')
   .action(handleGenerate)
 
 const configCmd = program.command('config').description('Manage configuration')

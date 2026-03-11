@@ -58,3 +58,12 @@ export async function getUnstagedDiff(): Promise<string> {
 export async function gitCommit(message: string): Promise<string> {
   return runGit(['commit', '-m', message])
 }
+
+export async function getLastCommitMessage(): Promise<string> {
+  const msg = await runGit(['log', '-1', '--pretty=%B'])
+  return msg.trim()
+}
+
+export async function gitAmend(message: string): Promise<string> {
+  return runGit(['commit', '--amend', '-m', message])
+}

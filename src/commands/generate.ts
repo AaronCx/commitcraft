@@ -2,7 +2,7 @@ import ora from 'ora'
 import chalk from 'chalk'
 import clipboard from 'clipboardy'
 import { confirm } from '@inquirer/prompts'
-import { isGitRepo, getStagedDiff, getUnstagedDiff, gitCommit } from '../core/git.js'
+import { isGitRepo, getStagedDiff, getUnstagedDiff, gitCommit, getLastCommitMessage, gitAmend } from '../core/git.js'
 import { generateCommitMessage } from '../core/ai.js'
 import { validateCommitMessage } from '../core/formatter.js'
 import { getConfig, getApiKey } from '../utils/config.js'
@@ -20,6 +20,7 @@ interface GenerateOptions {
   type?: string
   scope?: string
   emoji?: boolean
+  amend?: boolean
 }
 
 export async function handleGenerate(options: GenerateOptions) {
@@ -35,6 +36,52 @@ export async function handleGenerate(options: GenerateOptions) {
       spinner.stop()
       logger.error('Not a git repository. Run this command from inside a git project.')
       process.exit(1)
+    }
+
+    const cfg = getConfig()
+    const provider = (options.provider as 'anthropic' | 'openai') || cfg.provider
+    const model = options.model || cfg.model || undefined
+    const type = options.type
+    const scope = options.scope
+    const apiKey = getApiKey(provider)
+
+    if (!apiKey) {
+      spinner.stop()
+      logger.error(`No API key configured for ${provider}.`)
+      logger.info(`Set it with: commitcraft config set ${provider === 'anthropic' ? 'anthropicApiKey' : 'openaiApiKey'} YOUR_KEY`)
+      logger.info('Or set the environment variable: ' + (provider === 'anthropic' ? 'ANTHROPIC_API_KEY' : 'OPENAI_API_KEY'))
+      process.exit(1)
+    }
+
+    if (options.amend) {
+      spinner.text = 'Reading last commit...'
+      const lastMsg = await getLastCommitMessage()
+      logger.info(`Current message: "${lastMsg}"`)
+
+      spinner.text = 'Getting diff from last commit...'
+      const diff = await getStagedDiff() || (await getUnstagedDiff())
+      const amendDiff = diff || lastMsg
+
+      spinner.text = 'Generating new commit message...'
+      let message = await generateCommitMessage(amendDiff, { provider, model, apiKey, type, scope })
+
+      if (options.emoji || cfg.emoji) {
+        message = prependEmoji(message)
+      }
+
+      spinner.stop()
+
+      logger.success('New commit message generated\n')
+      console.log(chalk.bold(message))
+
+      const ok = await confirm({ message: `Amend last commit with: "${message}"?`, default: false })
+      if (ok) {
+        await gitAmend(message)
+        logger.success('Commit amended!')
+      } else {
+        logger.info('Amend cancelled.')
+      }
+      return
     }
 
     let diff = await getStagedDiff()
@@ -57,21 +104,6 @@ export async function handleGenerate(options: GenerateOptions) {
       logger.info('Dry run — diff that would be sent to AI:\n')
       console.log(chalk.dim(diff))
       return
-    }
-
-    const cfg = getConfig()
-    const provider = (options.provider as 'anthropic' | 'openai') || cfg.provider
-    const model = options.model || cfg.model || undefined
-    const type = options.type
-    const scope = options.scope
-    const apiKey = getApiKey(provider)
-
-    if (!apiKey) {
-      spinner.stop()
-      logger.error(`No API key configured for ${provider}.`)
-      logger.info(`Set it with: commitcraft config set ${provider === 'anthropic' ? 'anthropicApiKey' : 'openaiApiKey'} YOUR_KEY`)
-      logger.info('Or set the environment variable: ' + (provider === 'anthropic' ? 'ANTHROPIC_API_KEY' : 'OPENAI_API_KEY'))
-      process.exit(1)
     }
 
     spinner.text = 'Generating commit message...'
