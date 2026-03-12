@@ -34,22 +34,28 @@ export async function handleGenerate(options: GenerateOptions) {
   try {
     if (!(await isGitRepo())) {
       spinner.stop()
-      logger.error('Not a git repository. Run this command from inside a git project.')
+      logger.error('Not a git repository.\n')
+      logger.info('Run this command from inside a git project, or initialize one:')
+      logger.dim('  git init')
       process.exit(1)
     }
 
     const cfg = getConfig()
     const provider = (options.provider as 'anthropic' | 'openai') || cfg.provider
     const model = options.model || cfg.model || undefined
-    const type = options.type
+    const type = options.type || cfg.defaultType || undefined
     const scope = options.scope
     const apiKey = getApiKey(provider)
 
     if (!apiKey) {
       spinner.stop()
-      logger.error(`No API key configured for ${provider}.`)
-      logger.info(`Set it with: commitcraft config set ${provider === 'anthropic' ? 'anthropicApiKey' : 'openaiApiKey'} YOUR_KEY`)
-      logger.info('Or set the environment variable: ' + (provider === 'anthropic' ? 'ANTHROPIC_API_KEY' : 'OPENAI_API_KEY'))
+      const keyFlag = provider === 'anthropic' ? 'anthropicApiKey' : 'openaiApiKey'
+      const envVar = provider === 'anthropic' ? 'ANTHROPIC_API_KEY' : 'OPENAI_API_KEY'
+      logger.error(`No API key found for ${provider}.\n`)
+      logger.info('Set it with:')
+      logger.dim(`  commitcraft config set ${keyFlag} <your-key>`)
+      logger.info('Or set the environment variable:')
+      logger.dim(`  export ${envVar}=<your-key>`)
       process.exit(1)
     }
 
@@ -92,7 +98,9 @@ export async function handleGenerate(options: GenerateOptions) {
       diff = await getUnstagedDiff()
 
       if (!diff) {
-        logger.error('No changes found to generate a commit message for.')
+        logger.error('No changes detected.\n')
+        logger.info('Stage your changes first:')
+        logger.dim('  git add <files>')
         process.exit(1)
       }
 
@@ -108,7 +116,27 @@ export async function handleGenerate(options: GenerateOptions) {
 
     spinner.text = 'Generating commit message...'
 
-    let message = await generateCommitMessage(diff, { provider, model, apiKey, type, scope })
+    let message: string
+    try {
+      message = await generateCommitMessage(diff, { provider, model, apiKey, type, scope })
+    } catch (err) {
+      const errMsg = err instanceof Error ? err.message : String(err)
+      const isNetworkError =
+        errMsg.includes('fetch') ||
+        errMsg.includes('ENOTFOUND') ||
+        errMsg.includes('ECONNREFUSED') ||
+        errMsg.includes('ETIMEDOUT') ||
+        errMsg.includes('network') ||
+        errMsg.includes('socket') ||
+        errMsg.includes('ECONNRESET')
+      if (isNetworkError) {
+        spinner.stop()
+        logger.error(`Network error — could not reach ${provider} API.\n`)
+        logger.info('Check your internet connection and try again.')
+        process.exit(1)
+      }
+      throw err
+    }
 
     if (options.emoji || cfg.emoji) {
       message = prependEmoji(message)

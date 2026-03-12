@@ -1,3 +1,5 @@
+import { readFileSync, existsSync } from 'fs'
+import { join } from 'path'
 import Conf from 'conf'
 
 interface CommitCraftConfig {
@@ -7,6 +9,15 @@ interface CommitCraftConfig {
   model: string
   autoCopy: boolean
   emoji: boolean
+  defaultType: string
+}
+
+interface ProjectConfig {
+  provider?: 'anthropic' | 'openai'
+  model?: string
+  autoCopy?: boolean
+  emoji?: boolean
+  defaultType?: string
 }
 
 const config = new Conf<CommitCraftConfig>({
@@ -18,17 +29,47 @@ const config = new Conf<CommitCraftConfig>({
     model: '',
     autoCopy: false,
     emoji: false,
+    defaultType: '',
   },
 })
 
+export function loadProjectConfig(): ProjectConfig | null {
+  const configPath = join(process.cwd(), '.commitcraftrc')
+  if (!existsSync(configPath)) {
+    return null
+  }
+
+  try {
+    const raw = readFileSync(configPath, 'utf-8')
+    return JSON.parse(raw) as ProjectConfig
+  } catch {
+    return null
+  }
+}
+
 export function getConfig(): CommitCraftConfig {
-  return {
+  const global: CommitCraftConfig = {
     provider: config.get('provider'),
     anthropicApiKey: config.get('anthropicApiKey'),
     openaiApiKey: config.get('openaiApiKey'),
     model: config.get('model'),
     autoCopy: config.get('autoCopy'),
     emoji: config.get('emoji'),
+    defaultType: config.get('defaultType'),
+  }
+
+  const project = loadProjectConfig()
+  if (!project) {
+    return global
+  }
+
+  return {
+    ...global,
+    ...(project.provider !== undefined && { provider: project.provider }),
+    ...(project.model !== undefined && { model: project.model }),
+    ...(project.autoCopy !== undefined && { autoCopy: project.autoCopy }),
+    ...(project.emoji !== undefined && { emoji: project.emoji }),
+    ...(project.defaultType !== undefined && { defaultType: project.defaultType }),
   }
 }
 
