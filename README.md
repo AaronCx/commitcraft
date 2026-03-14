@@ -51,6 +51,10 @@ cc gen
 | `--copy` | Copy the generated message to clipboard |
 | `--commit` | Auto-run `git commit` with the generated message |
 | `--dry-run` | Show the diff that would be sent without calling AI |
+| `--type <type>` | Constrain commit type (`feat`, `fix`, `docs`, `style`, `refactor`, `perf`, `test`, `chore`, `ci`, `build`) |
+| `--scope <scope>` | Add a conventional commit scope, e.g. `feat(auth): ...` |
+| `--emoji` | Prepend a gitmoji to the commit message |
+| `--amend` | Regenerate the last commit message |
 
 ### Examples
 
@@ -66,9 +70,48 @@ commitcraft generate --provider openai
 
 # Preview what diff would be sent
 commitcraft generate --dry-run
+
+# Force a fix: type message
+commitcraft --type fix
+
+# Add scope: feat(auth): ...
+commitcraft --scope auth
+
+# Add gitmoji: ✨ feat: ...
+commitcraft --emoji
+
+# Redo the last commit message
+commitcraft --amend
 ```
 
-### Configuration
+### Init Command
+
+Create a `.commitcraftrc` project config file interactively:
+
+```bash
+commitcraft init
+```
+
+This walks you through selecting a provider, default commit type, emoji preference, and auto-copy setting.
+
+### Project Configuration
+
+CommitCraft supports a `.commitcraftrc` file in your project root. This JSON file lets you set project-specific defaults that override global config:
+
+```json
+{
+  "provider": "anthropic",
+  "emoji": true,
+  "autoCopy": false,
+  "defaultType": "feat"
+}
+```
+
+**Supported keys:** `provider`, `model`, `emoji`, `autoCopy`, `defaultType`
+
+Settings are merged with global config -- project settings take priority.
+
+### Global Configuration
 
 ```bash
 # Set a config value
@@ -78,7 +121,17 @@ commitcraft config set <key> <value>
 commitcraft config get <key>
 ```
 
-**Config keys:** `provider`, `anthropicApiKey`, `openaiApiKey`, `model`, `autoCopy`
+**Config keys:** `provider`, `anthropicApiKey`, `openaiApiKey`, `model`, `autoCopy`, `emoji`, `defaultType`
+
+### Troubleshooting
+
+| Error | Solution |
+|-------|----------|
+| "Not a git repository" | Run from inside a git project, or run `git init` |
+| "No API key found" | Set via `commitcraft config set anthropicApiKey <key>` or `export ANTHROPIC_API_KEY=<key>` |
+| "No changes detected" | Stage changes first with `git add <files>` |
+| "Network error" | Check your internet connection and try again |
+| "Invalid commit type" | Use one of: `feat`, `fix`, `docs`, `style`, `refactor`, `perf`, `test`, `chore`, `ci`, `build` |
 
 ## Supported Providers
 
