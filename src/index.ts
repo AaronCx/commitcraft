@@ -25,6 +25,19 @@ program
     'AI-powered conventional commit message generator\n\n💛 Support the project: https://ko-fi.com/aaroncx',
   )
   .version(getVersion(), '-v, --version')
+  .addHelpText(
+    'after',
+    `
+Examples:
+  $ commitcraft                    Generate from staged changes
+  $ commitcraft --type fix         Force a fix: type message
+  $ commitcraft --scope auth       Add scope: feat(auth): ...
+  $ commitcraft --emoji            Add gitmoji: ✨ feat: ...
+  $ commitcraft --dry-run          Preview the diff only
+  $ commitcraft --amend            Redo the last commit message
+  $ commitcraft init               Create .commitcraftrc config
+`,
+  )
 
 program
   .command('generate', { isDefault: true })
