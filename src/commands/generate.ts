@@ -1,7 +1,7 @@
 import ora from 'ora'
 import chalk from 'chalk'
 import clipboard from 'clipboardy'
-import { confirm } from '@inquirer/prompts'
+import { confirm, select, input } from '@inquirer/prompts'
 import { isGitRepo, getStagedDiff, getUnstagedDiff, gitCommit, getLastCommitMessage, gitAmend } from '../core/git.js'
 import { generateCommitMessage } from '../core/ai.js'
 import { validateCommitMessage } from '../core/formatter.js'
@@ -21,6 +21,7 @@ interface GenerateOptions {
   scope?: string
   emoji?: boolean
   amend?: boolean
+  interactive?: boolean
 }
 
 export async function handleGenerate(options: GenerateOptions) {
@@ -163,7 +164,11 @@ export async function handleGenerate(options: GenerateOptions) {
     }
 
     if (options.commit) {
-      const ok = await confirm({ message: `Commit with: "${message}"?`, default: false })
+      const useInteractive = options.interactive !== false
+      if (useInteractive) {
+        message = await interactiveLoop(message, diff, { provider, model, apiKey, type, scope }, options.emoji || cfg.emoji)
+      }
+      const ok = await confirm({ message: `Commit with: "${message}"?`, default: true })
       if (ok) {
         await gitCommit(message)
         logger.success('Committed!')
@@ -176,5 +181,53 @@ export async function handleGenerate(options: GenerateOptions) {
     const msg = err instanceof Error ? err.message : String(err)
     logger.error(msg)
     process.exit(1)
+  }
+}
+
+async function interactiveLoop(
+  message: string,
+  diff: string,
+  aiOpts: { provider: 'anthropic' | 'openai'; model?: string; apiKey: string; type?: string; scope?: string },
+  useEmoji: boolean,
+): Promise<string> {
+  let current = message
+
+  // eslint-disable-next-line no-constant-condition
+  while (true) {
+    const action = await select({
+      message: 'What would you like to do?',
+      choices: [
+        { name: 'Accept this message', value: 'accept' },
+        { name: 'Edit the message', value: 'edit' },
+        { name: 'Regenerate a new message', value: 'regenerate' },
+      ],
+    })
+
+    if (action === 'accept') {
+      return current
+    }
+
+    if (action === 'edit') {
+      const edited = await input({
+        message: 'Edit commit message:',
+        default: current,
+      })
+      current = edited
+      console.log()
+      console.log(chalk.bold(current))
+      continue
+    }
+
+    if (action === 'regenerate') {
+      const spinner = ora('Regenerating commit message...').start()
+      let newMessage = await generateCommitMessage(diff, aiOpts)
+      if (useEmoji) {
+        newMessage = prependEmoji(newMessage)
+      }
+      spinner.stop()
+      current = newMessage
+      logger.success('New message generated\n')
+      console.log(chalk.bold(current))
+    }
   }
 }

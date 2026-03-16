@@ -52,6 +52,8 @@ program
   .option('--scope <scope>', 'Add a conventional commit scope, e.g. feat(auth): ...')
   .option('--emoji', 'Prepend a gitmoji to the commit message')
   .option('--amend', 'Regenerate the last commit message')
+  .option('--interactive', 'Interactive mode: accept, edit, or regenerate (default with --commit)')
+  .option('--no-interactive', 'Disable interactive mode')
   .action(handleGenerate)
 
 program
