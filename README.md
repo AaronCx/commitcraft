@@ -169,3 +169,5 @@ CommitCraft is free and open source. If it saves you time, consider buying me a 
 ## License
 
 MIT
+
+<!-- lastgate-refresh -->
