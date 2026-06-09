@@ -7,12 +7,7 @@ vi.mock('child_process', () => ({
   spawn: vi.fn(),
 }))
 
-vi.mock('fs/promises', () => ({
-  access: vi.fn(),
-}))
-
 import { getStagedDiff, getUnstagedDiff, isGitRepo } from '../src/core/git.js'
-import { access } from 'fs/promises'
 
 function createMockProcess(stdout: string, exitCode = 0) {
   const proc = new EventEmitter() as ReturnType<typeof spawn>
@@ -66,14 +61,19 @@ describe('getUnstagedDiff', () => {
 })
 
 describe('isGitRepo', () => {
-  it('returns true when .git exists', async () => {
-    vi.mocked(access).mockResolvedValue(undefined)
+  it('returns true when inside a git work tree', async () => {
+    vi.mocked(spawn).mockReturnValue(createMockProcess('true\n'))
     const result = await isGitRepo()
     expect(result).toBe(true)
+    expect(spawn).toHaveBeenCalledWith(
+      'git',
+      ['rev-parse', '--is-inside-work-tree'],
+      expect.any(Object),
+    )
   })
 
-  it('returns false when .git does not exist', async () => {
-    vi.mocked(access).mockRejectedValue(new Error('ENOENT'))
+  it('returns false when not in a git repository', async () => {
+    vi.mocked(spawn).mockReturnValue(createMockProcess('', 128))
     const result = await isGitRepo()
     expect(result).toBe(false)
   })

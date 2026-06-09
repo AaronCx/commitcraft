@@ -1,6 +1,4 @@
 import { spawn } from 'child_process'
-import { access } from 'fs/promises'
-import { join } from 'path'
 import { logger } from '../utils/logger.js'
 
 function runGit(args: string[]): Promise<string> {
@@ -38,8 +36,8 @@ function truncateDiff(diff: string): string {
 
 export async function isGitRepo(): Promise<boolean> {
   try {
-    await access(join(process.cwd(), '.git'))
-    return true
+    const out = await runGit(['rev-parse', '--is-inside-work-tree'])
+    return out.trim() === 'true'
   } catch {
     return false
   }
